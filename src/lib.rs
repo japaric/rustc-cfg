@@ -24,8 +24,6 @@
 
 use std::ffi::OsStr;
 use std::process::Command;
-#[cfg(test)]
-use std::fmt;
 
 macro_rules! u {
     ($e:expr) => {
@@ -34,6 +32,7 @@ macro_rules! u {
 }
 
 /// Target specification
+#[cfg_attr(test, derive(Debug))]
 pub struct Target {
     /// Equivalent to `cfg(target_os = "..")`
     pub target_os: String,
@@ -127,22 +126,6 @@ impl Target {
             target_feature: target_feature,
             _0: (),
         })
-    }
-}
-
-#[cfg(test)]
-impl fmt::Debug for Target {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Target")
-            .field("target_os", &self.target_os)
-            .field("target_family", &self.target_family)
-            .field("target_arch", &self.target_arch)
-            .field("target_endian", &self.target_endian)
-            .field("target_pointer_width", &self.target_pointer_width)
-            .field("target_env", &self.target_env)
-            .field("target_has_atomic", &self.target_has_atomic)
-            .field("target_feature", &self.target_feature)
-            .finish()
     }
 }
 
