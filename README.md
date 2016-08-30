@@ -6,6 +6,10 @@
 
 > Target specifications at build.rs time
 
+## Requirements
+
+- This crate depends on rustc >=1.8.0.
+
 ## License
 
 Licensed under either of

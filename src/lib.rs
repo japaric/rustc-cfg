@@ -1,5 +1,9 @@
 //! Target specifications at build.rs time
 //!
+//! # Requirements
+//!
+//! - This crate depends on rustc >=1.8.0.
+//!
 //! # How to use
 //!
 //! ``` no_run
