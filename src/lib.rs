@@ -1,8 +1,12 @@
 //! Target specifications at build.rs time
 //!
+//! # Requirements
+//!
+//! - This crate depends on rustc >=1.8.0.
+//!
 //! # How to use
 //!
-//! ```
+//! ``` no_run
 //! // build.rs
 //! extern crate build_target;
 //!
@@ -11,7 +15,7 @@
 //! use build_target::Target;
 //!
 //! fn main() {
-//!     let target = Target::new(env::var_os("TARGET).unwrap()).unwrap();
+//!     let target = Target::new(env::var_os("TARGET").unwrap()).unwrap();
 //!
 //!     if target.target_arch == "arm" {
 //!          // don't compile this or that C file
@@ -24,8 +28,6 @@
 
 use std::ffi::OsStr;
 use std::process::Command;
-#[cfg(test)]
-use std::fmt;
 
 macro_rules! u {
     ($e:expr) => {
@@ -34,6 +36,7 @@ macro_rules! u {
 }
 
 /// Target specification
+#[cfg_attr(test, derive(Debug))]
 pub struct Target {
     /// Equivalent to `cfg(target_os = "..")`
     pub target_os: String,
@@ -81,6 +84,10 @@ impl Target {
             .output());
 
         if !output.status.success() {
+            if u!(String::from_utf8(output.stderr)).contains("unknown print request `cfg`") {
+                panic!("rustc is too old, `--print cfg` is not available")
+            }
+
             return Err(());
         }
 
@@ -131,35 +138,53 @@ impl Target {
 }
 
 #[cfg(test)]
-impl fmt::Debug for Target {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Target")
-            .field("target_os", &self.target_os)
-            .field("target_family", &self.target_family)
-            .field("target_arch", &self.target_arch)
-            .field("target_endian", &self.target_endian)
-            .field("target_pointer_width", &self.target_pointer_width)
-            .field("target_env", &self.target_env)
-            .field("target_has_atomic", &self.target_has_atomic)
-            .field("target_feature", &self.target_feature)
-            .finish()
-    }
-}
-
-#[cfg(test)]
 mod test {
     use std::process::Command;
 
     #[test]
     fn all() {
-        let targets = String::from_utf8(Command::new("rustc")
+        let output = u!(Command::new("rustc")
                 .args(&["--print", "target-list"])
-                .output()
-                .unwrap()
-                .stdout)
-            .unwrap();
+                .output());
 
-        for target in targets.lines() {
+        let stdout = u!(String::from_utf8(output.stdout));
+        // let targets = if output.status.success() {
+        let targets = if false {
+            stdout.lines().collect()
+        } else {
+            // No --print target-list available, use some targets that are known to exist since
+            // 1.0.0
+
+            vec![
+                "aarch64-linux-android",
+                "aarch64-unknown-linux-gnu",
+                "arm-linux-androideabi",
+                "arm-unknown-linux-gnueabi",
+                "arm-unknown-linux-gnueabihf",
+                "i686-apple-darwin",
+                "i686-pc-windows-gnu",
+                "i686-unknown-dragonfly",
+                "i686-unknown-linux-gnu",
+                "mips-unknown-linux-gnu",
+                "mipsel-unknown-linux-gnu",
+                "powerpc-unknown-linux-gnu",
+                "x86_64-apple-darwin",
+                "x86_64-pc-windows-gnu",
+                "x86_64-unknown-bitrig",
+                "x86_64-unknown-dragonfly",
+                "x86_64-unknown-freebsd",
+                "x86_64-unknown-linux-gnu",
+                "x86_64-unknown-openbsd",
+                // These appear to have been removed in recent Rust releases
+                // "aarch64-apple-ios",
+                // "armv7-apple-ios",
+                // "armv7s-apple-ios",
+                // "i386-apple-ios",
+                // "x86_64-apple-ios",
+            ]
+        };
+
+        for target in targets {
             println!("{}\n\t{:?}\n", target, ::Target::new(target));
         }
     }

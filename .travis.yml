@@ -1,0 +1,18 @@
+language: rust
+rust:
+  - 1.8.0
+  - stable
+  - beta
+  - nightly
+
+script:
+  - cargo build
+  - cargo test -- --nocapture
+
+branches:
+  only:
+    - master
+
+notifications:
+  email:
+    on_success: never
