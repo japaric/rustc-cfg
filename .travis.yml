@@ -17,7 +17,7 @@ rust:
 
 script:
   - cargo build
-  - cargo test
+  - cargo test -- --nocapture
 
 branches:
   only:

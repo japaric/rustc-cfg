@@ -2,7 +2,7 @@
 //!
 //! # How to use
 //!
-//! ```
+//! ``` no_run
 //! // build.rs
 //! extern crate build_target;
 //!
@@ -11,7 +11,7 @@
 //! use build_target::Target;
 //!
 //! fn main() {
-//!     let target = Target::new(env::var_os("TARGET).unwrap()).unwrap();
+//!     let target = Target::new(env::var_os("TARGET").unwrap()).unwrap();
 //!
 //!     if target.target_arch == "arm" {
 //!          // don't compile this or that C file
