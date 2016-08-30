@@ -80,6 +80,10 @@ impl Target {
             .output());
 
         if !output.status.success() {
+            if u!(String::from_utf8(output.stderr)).contains("unknown print request `cfg`") {
+                panic!("rustc is too old, `--print cfg` is not available")
+            }
+
             return Err(());
         }
 
@@ -135,14 +139,48 @@ mod test {
 
     #[test]
     fn all() {
-        let targets = String::from_utf8(Command::new("rustc")
+        let output = u!(Command::new("rustc")
                 .args(&["--print", "target-list"])
-                .output()
-                .unwrap()
-                .stdout)
-            .unwrap();
+                .output());
 
-        for target in targets.lines() {
+        let stdout = u!(String::from_utf8(output.stdout));
+        // let targets = if output.status.success() {
+        let targets = if false {
+            stdout.lines().collect()
+        } else {
+            // No --print target-list available, use some targets that are known to exist since
+            // 1.0.0
+
+            vec![
+                "aarch64-linux-android",
+                "aarch64-unknown-linux-gnu",
+                "arm-linux-androideabi",
+                "arm-unknown-linux-gnueabi",
+                "arm-unknown-linux-gnueabihf",
+                "i686-apple-darwin",
+                "i686-pc-windows-gnu",
+                "i686-unknown-dragonfly",
+                "i686-unknown-linux-gnu",
+                "mips-unknown-linux-gnu",
+                "mipsel-unknown-linux-gnu",
+                "powerpc-unknown-linux-gnu",
+                "x86_64-apple-darwin",
+                "x86_64-pc-windows-gnu",
+                "x86_64-unknown-bitrig",
+                "x86_64-unknown-dragonfly",
+                "x86_64-unknown-freebsd",
+                "x86_64-unknown-linux-gnu",
+                "x86_64-unknown-openbsd",
+                // These appear to have been removed in recent Rust releases
+                // "aarch64-apple-ios",
+                // "armv7-apple-ios",
+                // "armv7s-apple-ios",
+                // "i386-apple-ios",
+                // "x86_64-apple-ios",
+            ]
+        };
+
+        for target in targets {
             println!("{}\n\t{:?}\n", target, ::Target::new(target));
         }
     }
