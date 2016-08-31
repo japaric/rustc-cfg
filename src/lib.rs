@@ -50,6 +50,8 @@ pub struct Target {
     pub target_pointer_width: String,
     /// Equivalent to `cfg(target_env = "..")`
     pub target_env: String,
+    /// Equivalent to `cfg(target_vendor = "..")`
+    pub target_vendor: String,
     /// Equivalent to `cfg(target_has_atomic = "..")`
     pub target_has_atomic: Vec<String>,
     /// Equivalent to `cfg(target_feature = "..")`
