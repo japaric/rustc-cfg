@@ -100,6 +100,7 @@ impl Target {
         let mut target_endian = Err(());
         let mut target_pointer_width = Err(());
         let mut target_env = Err(());
+        let mut target_vendor = Err(());
         let mut target_has_atomic = vec![];
         let mut target_feature = vec![];
 
@@ -116,6 +117,7 @@ impl Target {
                         target_pointer_width = Ok(value.trim_matches('"').to_string())
                     }
                     "target_env" => target_env = Ok(value.trim_matches('"').to_string()),
+                    "target_vendor" => target_vendor = Ok(value.trim_matches('"').to_string()),
                     "target_has_atomic" => {
                         target_has_atomic.push(value.trim_matches('"').to_string())
                     }
@@ -132,6 +134,7 @@ impl Target {
             target_endian: u!(target_endian),
             target_pointer_width: u!(target_pointer_width),
             target_env: u!(target_env),
+            target_vendor: u!(target_vendor),
             target_has_atomic: target_has_atomic,
             target_feature: target_feature,
             _0: (),
