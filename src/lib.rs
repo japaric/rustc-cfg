@@ -1,4 +1,4 @@
-//! `rustc --print cfg` parser
+//! `rustc --print cfg` parser (usable in build.rs scripts)
 //!
 //! # Requirements
 //!
