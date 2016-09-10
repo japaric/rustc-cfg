@@ -1,4 +1,4 @@
 [package]
 authors = ["Jorge Aparicio <japaricious@gmail.com>"]
-name = "build-target"
+name = "rustc-cfg"
 version = "0.1.0"

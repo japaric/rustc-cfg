@@ -1,4 +1,4 @@
-//! Target specifications at build.rs time
+//! `rustc --print cfg` parser
 //!
 //! # Requirements
 //!
@@ -8,16 +8,16 @@
 //!
 //! ``` no_run
 //! // build.rs
-//! extern crate build_target;
+//! extern crate rustc_cfg;
 //!
 //! use std::env;
 //!
-//! use build_target::Target;
+//! use rustc_cfg::Cfg;
 //!
 //! fn main() {
-//!     let target = Target::new(env::var_os("TARGET").unwrap()).unwrap();
+//!     let cfg = Cfg::new(env::var_os("TARGET").unwrap()).unwrap();
 //!
-//!     if target.target_arch == "arm" {
+//!     if cfg.target_arch == "arm" {
 //!          // don't compile this or that C file
 //!     }
 //! }
@@ -35,9 +35,9 @@ macro_rules! u {
     }
 }
 
-/// Target specification
+/// Parsed `rustc --print cfg`
 #[cfg_attr(test, derive(Debug))]
-pub struct Target {
+pub struct Cfg {
     /// Equivalent to `cfg(target_os = "..")`
     pub target_os: String,
     /// Equivalent to `cfg(unix)` or `cfg(windows)`
@@ -57,7 +57,7 @@ pub struct Target {
     _0: (),
 }
 
-impl Target {
+impl Cfg {
     /// Returns the target specification of `target`
     ///
     /// # Errors
@@ -70,13 +70,13 @@ impl Target {
     ///   for this "custom" target.
     /// - `rustc` was built against an LLVM that doesn't have the backend to support this target.
     ///   This also implies that you can't generate binaries for this target anyway.
-    pub fn new<S>(target: S) -> Result<Target, ()>
+    pub fn new<S>(target: S) -> Result<Cfg, ()>
         where S: AsRef<OsStr>
     {
-        Target::new_(target.as_ref())
+        Cfg::new_(target.as_ref())
     }
 
-    fn new_(target: &OsStr) -> Result<Target, ()> {
+    fn new_(target: &OsStr) -> Result<Cfg, ()> {
         let output = u!(Command::new("rustc")
             .arg("--target")
             .arg(target)
@@ -123,7 +123,7 @@ impl Target {
             }
         }
 
-        Ok(Target {
+        Ok(Cfg {
             target_os: u!(target_os),
             target_family: u!(target_family),
             target_arch: u!(target_arch),
@@ -148,8 +148,7 @@ mod test {
                 .output());
 
         let stdout = u!(String::from_utf8(output.stdout));
-        // let targets = if output.status.success() {
-        let targets = if false {
+        let targets = if output.status.success() {
             stdout.lines().collect()
         } else {
             // No --print target-list available, use some targets that are known to exist since
@@ -175,7 +174,7 @@ mod test {
                 "x86_64-unknown-freebsd",
                 "x86_64-unknown-linux-gnu",
                 "x86_64-unknown-openbsd",
-                // These appear to have been removed in recent Rust releases
+                // Using these targets produce a crash if no iphone SDK/simulator is installed
                 // "aarch64-apple-ios",
                 // "armv7-apple-ios",
                 // "armv7s-apple-ios",
@@ -185,7 +184,7 @@ mod test {
         };
 
         for target in targets {
-            println!("{}\n\t{:?}\n", target, ::Target::new(target));
+            println!("{}\n\t{:?}\n", target, ::Cfg::new(target));
         }
     }
 }

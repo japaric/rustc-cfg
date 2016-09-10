@@ -1,10 +1,10 @@
-[![Travis][travis]](https://travis-ci.org/japaric/build-target)
+[![Travis][travis]](https://travis-ci.org/japaric/rustc-cfg)
 
-[travis]: https://travis-ci.org/japaric/build-target.svg?branch=master
+[travis]: https://travis-ci.org/japaric/rustc-cfg.svg?branch=master
 
-# `build-target`
+# `rustc-cfg`
 
-> Target specifications at build.rs time
+> `rustc --print cfg` parser
 
 ## Requirements
 
