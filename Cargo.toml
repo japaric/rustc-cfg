@@ -2,7 +2,7 @@
 authors = ["Jorge Aparicio <japaricious@gmail.com>"]
 description = "`rustc --print cfg` parser (usable in build.rs scripts)"
 documentation = "https://docs.rs/rustc-cfg"
-keywords = ["build.rs", "cfg", "rustc", "target"]
+keywords = ["build", "cfg", "rustc", "target"]
 license = "MIT OR Apache-2.0"
 name = "rustc-cfg"
 repository = "https://github.com/japaric/rustc-cfg"
