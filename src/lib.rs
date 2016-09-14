@@ -26,6 +26,7 @@
 #![deny(missing_docs)]
 #![deny(warnings)]
 
+use std::env;
 use std::ffi::OsStr;
 use std::process::Command;
 
@@ -77,7 +78,8 @@ impl Cfg {
     }
 
     fn new_(target: &OsStr) -> Result<Cfg, ()> {
-        let output = u!(Command::new("rustc")
+        // NOTE Cargo passes RUSTC to build scripts, prefer that over plain `rustc`.
+        let output = u!(Command::new(env::var("RUSTC").as_ref().map(|s| &**s).unwrap_or("rustc"))
             .arg("--target")
             .arg(target)
             .args(&["--print", "cfg"])
