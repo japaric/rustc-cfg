@@ -39,26 +39,28 @@ macro_rules! u {
 /// Parsed `rustc --print cfg`
 #[cfg_attr(test, derive(Debug))]
 pub struct Cfg {
-    /// Equivalent to `cfg(target_os = "..")`
-    pub target_os: String,
-    /// Equivalent to `cfg(unix)` or `cfg(windows)`
-    pub target_family: String,
+    /// The `llvm-target` field of the target specification
+    pub llvm_target: Option<String>,
     /// Equivalent to `cfg(target_arch = "..")`
     pub target_arch: String,
     /// Equivalent to `cfg(target_endian = "..")`
     pub target_endian: String,
-    /// Equivalent to `cfg(target_pointer_width = "..")`
-    pub target_pointer_width: String,
     /// Equivalent to `cfg(target_env = "..")`
     pub target_env: String,
+    /// Equivalent to `cfg(unix)` or `cfg(windows)`
+    pub target_family: String,
+    /// Equivalent to `cfg(target_feature = "..")`
+    pub target_feature: Vec<String>,
+    /// Equivalent to `cfg(target_has_atomic = "..")`
+    pub target_has_atomic: Vec<String>,
+    /// Equivalent to `cfg(target_os = "..")`
+    pub target_os: String,
+    /// Equivalent to `cfg(target_pointer_width = "..")`
+    pub target_pointer_width: String,
     /// Equivalent to `cfg(target_vendor = "..")`.
     ///
     /// NOTE Only available on Rust >= 1.13.0
     pub target_vendor: Option<String>,
-    /// Equivalent to `cfg(target_has_atomic = "..")`
-    pub target_has_atomic: Vec<String>,
-    /// Equivalent to `cfg(target_feature = "..")`
-    pub target_feature: Vec<String>,
     _0: (),
 }
 
@@ -98,49 +100,52 @@ impl Cfg {
         }
 
         let spec = u!(String::from_utf8(output.stdout));
-        let mut target_os = Err(());
-        let mut target_family = Err(());
+        let mut llvm_target = Err(());
         let mut target_arch = Err(());
         let mut target_endian = Err(());
-        let mut target_pointer_width = Err(());
         let mut target_env = Err(());
-        let mut target_vendor = Err(());
-        let mut target_has_atomic = vec![];
+        let mut target_family = Err(());
         let mut target_feature = vec![];
+        let mut target_has_atomic = vec![];
+        let mut target_os = Err(());
+        let mut target_pointer_width = Err(());
+        let mut target_vendor = Err(());
 
         for entry in spec.lines() {
             let mut parts = entry.split('=');
 
             if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
                 match key {
-                    "target_os" => target_os = Ok(value.trim_matches('"').to_string()),
-                    "target_family" => target_family = Ok(value.trim_matches('"').to_string()),
+                    "llvm_target" => llvm_target = Ok(value.trim_matches('"').to_string()),
                     "target_arch" => target_arch = Ok(value.trim_matches('"').to_string()),
                     "target_endian" => target_endian = Ok(value.trim_matches('"').to_string()),
-                    "target_pointer_width" => {
-                        target_pointer_width = Ok(value.trim_matches('"').to_string())
-                    }
                     "target_env" => target_env = Ok(value.trim_matches('"').to_string()),
-                    "target_vendor" => target_vendor = Ok(value.trim_matches('"').to_string()),
+                    "target_family" => target_family = Ok(value.trim_matches('"').to_string()),
+                    "target_feature" => target_feature.push(value.trim_matches('"').to_string()),
                     "target_has_atomic" => {
                         target_has_atomic.push(value.trim_matches('"').to_string())
                     }
-                    "target_feature" => target_feature.push(value.trim_matches('"').to_string()),
+                    "target_os" => target_os = Ok(value.trim_matches('"').to_string()),
+                    "target_pointer_width" => {
+                        target_pointer_width = Ok(value.trim_matches('"').to_string())
+                    }
+                    "target_vendor" => target_vendor = Ok(value.trim_matches('"').to_string()),
                     _ => {}
                 }
             }
         }
 
         Ok(Cfg {
-            target_os: u!(target_os),
-            target_family: u!(target_family),
+            llvm_target: llvm_target.ok(),
             target_arch: u!(target_arch),
             target_endian: u!(target_endian),
-            target_pointer_width: u!(target_pointer_width),
             target_env: u!(target_env),
-            target_vendor: target_vendor.ok(),
-            target_has_atomic: target_has_atomic,
+            target_family: u!(target_family),
             target_feature: target_feature,
+            target_has_atomic: target_has_atomic,
+            target_os: u!(target_os),
+            target_pointer_width: u!(target_pointer_width),
+            target_vendor: target_vendor.ok(),
             _0: (),
         })
     }
