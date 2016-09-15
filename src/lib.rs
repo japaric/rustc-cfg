@@ -51,8 +51,10 @@ pub struct Cfg {
     pub target_pointer_width: String,
     /// Equivalent to `cfg(target_env = "..")`
     pub target_env: String,
-    /// Equivalent to `cfg(target_vendor = "..")`
-    pub target_vendor: String,
+    /// Equivalent to `cfg(target_vendor = "..")`.
+    ///
+    /// NOTE Only available on Rust >= 1.13.0
+    pub target_vendor: Option<String>,
     /// Equivalent to `cfg(target_has_atomic = "..")`
     pub target_has_atomic: Vec<String>,
     /// Equivalent to `cfg(target_feature = "..")`
@@ -136,7 +138,7 @@ impl Cfg {
             target_endian: u!(target_endian),
             target_pointer_width: u!(target_pointer_width),
             target_env: u!(target_env),
-            target_vendor: u!(target_vendor),
+            target_vendor: target_vendor.ok(),
             target_has_atomic: target_has_atomic,
             target_feature: target_feature,
             _0: (),
