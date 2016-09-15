@@ -51,6 +51,8 @@ pub struct Cfg {
     pub target_pointer_width: String,
     /// Equivalent to `cfg(target_env = "..")`
     pub target_env: String,
+    /// Equivalent to `cfg(target_vendor = "..")`
+    pub target_vendor: String,
     /// Equivalent to `cfg(target_has_atomic = "..")`
     pub target_has_atomic: Vec<String>,
     /// Equivalent to `cfg(target_feature = "..")`
@@ -100,6 +102,7 @@ impl Cfg {
         let mut target_endian = Err(());
         let mut target_pointer_width = Err(());
         let mut target_env = Err(());
+        let mut target_vendor = Err(());
         let mut target_has_atomic = vec![];
         let mut target_feature = vec![];
 
@@ -116,6 +119,7 @@ impl Cfg {
                         target_pointer_width = Ok(value.trim_matches('"').to_string())
                     }
                     "target_env" => target_env = Ok(value.trim_matches('"').to_string()),
+                    "target_vendor" => target_vendor = Ok(value.trim_matches('"').to_string()),
                     "target_has_atomic" => {
                         target_has_atomic.push(value.trim_matches('"').to_string())
                     }
@@ -132,6 +136,7 @@ impl Cfg {
             target_endian: u!(target_endian),
             target_pointer_width: u!(target_pointer_width),
             target_env: u!(target_env),
+            target_vendor: u!(target_vendor),
             target_has_atomic: target_has_atomic,
             target_feature: target_feature,
             _0: (),

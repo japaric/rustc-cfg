@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Parse target_vendor. `Cfg` now has a new `target_vendor` field.
+
 ## [v0.1.1] - 2016-09-15
 
 ### Changed
