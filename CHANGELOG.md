@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- `Cfg::new` now returns a `Result<Cfg, String>`. This should result (no pun intended) in more
+  helpful messages when one `unwrap`s its return value.
+
 ## [v0.1.2] - 2016-09-15
 
 ### Added

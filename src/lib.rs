@@ -75,13 +75,13 @@ impl Cfg {
     ///   for this "custom" target.
     /// - `rustc` was built against an LLVM that doesn't have the backend to support this target.
     ///   This also implies that you can't generate binaries for this target anyway.
-    pub fn new<S>(target: S) -> Result<Cfg, ()>
+    pub fn new<S>(target: S) -> Result<Cfg, String>
         where S: AsRef<OsStr>
     {
         Cfg::new_(target.as_ref())
     }
 
-    fn new_(target: &OsStr) -> Result<Cfg, ()> {
+    fn new_(target: &OsStr) -> Result<Cfg, String> {
         // NOTE Cargo passes RUSTC to build scripts, prefer that over plain `rustc`.
         let output = u!(Command::new(env::var("RUSTC").as_ref().map(|s| &**s).unwrap_or("rustc"))
             .arg("--target")
@@ -90,11 +90,19 @@ impl Cfg {
             .output());
 
         if !output.status.success() {
-            if u!(String::from_utf8(output.stderr)).contains("unknown print request `cfg`") {
-                panic!("rustc is too old, `--print cfg` is not available")
+            let stderr = u!(String::from_utf8(output.stderr));
+
+            if stderr.contains("unknown print request `cfg`") {
+                return Err(format!("{}\nhelp: Your rustc is too old; use a newer version", stderr));
             }
 
-            return Err(());
+            if stderr.contains("not find specification for target") {
+                return Err(format!("{}\nhelp: If using a custom target, set the RUST_TARGET_PATH \
+                                    env var to the directory where its .json file is stored.",
+                                   stderr.lines().next().unwrap()))
+            }
+
+            return Err(stderr);
         }
 
         let spec = u!(String::from_utf8(output.stdout));
