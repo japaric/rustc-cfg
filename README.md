@@ -1,6 +1,6 @@
-[![Travis][travis]](https://travis-ci.org/japaric/rustc-cfg)
-
-[travis]: https://travis-ci.org/japaric/rustc-cfg.svg?branch=master
+[![Build status](https://travis-ci.org/japaric/rustc-cfg.svg?branch=master)](https://travis-ci.org/japaric/rustc-cfg)
+[![crates.io](https://img.shields.io/crates/d/rustc-cfg.svg)](https://crates.io/crates/rustc-cfg)
+[![crates.io](https://img.shields.io/crates/v/rustc-cfg.svg)](https://crates.io/crates/rustc-cfg)
 
 # `rustc-cfg`
 
