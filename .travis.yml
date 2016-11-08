@@ -3,7 +3,6 @@ language: rust
 rust:
   - 1.8.0
   - stable
-  - beta
   - nightly
 
 script:
@@ -18,4 +17,3 @@ branches:
 notifications:
   email:
     on_success: never
-  webhooks: https://homu.herokuapp.com/travis
