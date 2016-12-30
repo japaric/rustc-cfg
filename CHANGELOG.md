@@ -2,10 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/) 
+The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
+
+### Changed
+
+- [breaking-change] `target_family` is now optional (`Option<String>`).
 
 ## [v0.2.0] - 2016-10-02
 
@@ -27,7 +31,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - `Cfg::new` now prefers shelling out to RUSTC, if set, instead of `rustc`. Rationale: Cargo passes
   this variable to build scripts with the path to the `rustc` that used to build the build script,
   which may not match the `rustc` in `PATH`.
-  
+
 ## v0.1.0 - 2016-09-10
 
 - Initial release

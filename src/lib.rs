@@ -42,7 +42,7 @@ pub struct Cfg {
     /// Equivalent to `cfg(target_os = "..")`
     pub target_os: String,
     /// Equivalent to `cfg(unix)` or `cfg(windows)`
-    pub target_family: String,
+    pub target_family: Option<String>,
     /// Equivalent to `cfg(target_arch = "..")`
     pub target_arch: String,
     /// Equivalent to `cfg(target_endian = "..")`
@@ -83,7 +83,10 @@ impl Cfg {
 
     fn new_(target: &OsStr) -> Result<Cfg, String> {
         // NOTE Cargo passes RUSTC to build scripts, prefer that over plain `rustc`.
-        let output = u!(Command::new(env::var("RUSTC").as_ref().map(|s| &**s).unwrap_or("rustc"))
+        let output = u!(Command::new(env::var("RUSTC")
+                .as_ref()
+                .map(|s| &**s)
+                .unwrap_or("rustc"))
             .arg("--target")
             .arg(target)
             .args(&["--print", "cfg"])
@@ -93,13 +96,16 @@ impl Cfg {
             let stderr = u!(String::from_utf8(output.stderr));
 
             if stderr.contains("unknown print request `cfg`") {
-                return Err(format!("{}\nhelp: Your rustc is too old; use a newer version", stderr));
+                return Err(format!("{}\nhelp: Your rustc is too old; use a \
+                                    newer version",
+                                   stderr));
             }
 
             if stderr.contains("not find specification for target") {
-                return Err(format!("{}\nhelp: If using a custom target, set the RUST_TARGET_PATH \
-                                    env var to the directory where its .json file is stored.",
-                                   stderr.lines().next().unwrap()))
+                return Err(format!("{}\nhelp: If using a custom target, set \
+                                    the RUST_TARGET_PATH env var to the \
+                                    directory where its .json file is stored.",
+                                   stderr.lines().next().unwrap()));
             }
 
             return Err(stderr);
@@ -121,19 +127,34 @@ impl Cfg {
 
             if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
                 match key {
-                    "target_os" => target_os = Ok(value.trim_matches('"').to_string()),
-                    "target_family" => target_family = Ok(value.trim_matches('"').to_string()),
-                    "target_arch" => target_arch = Ok(value.trim_matches('"').to_string()),
-                    "target_endian" => target_endian = Ok(value.trim_matches('"').to_string()),
-                    "target_pointer_width" => {
-                        target_pointer_width = Ok(value.trim_matches('"').to_string())
+                    "target_os" => {
+                        target_os = Ok(value.trim_matches('"').to_string())
                     }
-                    "target_env" => target_env = Ok(value.trim_matches('"').to_string()),
-                    "target_vendor" => target_vendor = Ok(value.trim_matches('"').to_string()),
+                    "target_family" => {
+                        target_family = Ok(value.trim_matches('"').to_string())
+                    }
+                    "target_arch" => {
+                        target_arch = Ok(value.trim_matches('"').to_string())
+                    }
+                    "target_endian" => {
+                        target_endian = Ok(value.trim_matches('"').to_string())
+                    }
+                    "target_pointer_width" => {
+                        target_pointer_width = Ok(value.trim_matches('"')
+                            .to_string())
+                    }
+                    "target_env" => {
+                        target_env = Ok(value.trim_matches('"').to_string())
+                    }
+                    "target_vendor" => {
+                        target_vendor = Ok(value.trim_matches('"').to_string())
+                    }
                     "target_has_atomic" => {
                         target_has_atomic.push(value.trim_matches('"').to_string())
                     }
-                    "target_feature" => target_feature.push(value.trim_matches('"').to_string()),
+                    "target_feature" => {
+                        target_feature.push(value.trim_matches('"').to_string())
+                    }
                     _ => {}
                 }
             }
@@ -141,7 +162,7 @@ impl Cfg {
 
         Ok(Cfg {
             target_os: u!(target_os),
-            target_family: u!(target_family),
+            target_family: target_family.ok(),
             target_arch: u!(target_arch),
             target_endian: u!(target_endian),
             target_pointer_width: u!(target_pointer_width),
@@ -161,8 +182,8 @@ mod test {
     #[test]
     fn all() {
         let output = u!(Command::new("rustc")
-                .args(&["--print", "target-list"])
-                .output());
+            .args(&["--print", "target-list"])
+            .output());
 
         let stdout = u!(String::from_utf8(output.stdout));
         let targets = if output.status.success() {
@@ -171,33 +192,31 @@ mod test {
             // No --print target-list available, use some targets that are known to exist since
             // 1.0.0
 
-            vec![
-                "aarch64-linux-android",
-                "aarch64-unknown-linux-gnu",
-                "arm-linux-androideabi",
-                "arm-unknown-linux-gnueabi",
-                "arm-unknown-linux-gnueabihf",
-                "i686-apple-darwin",
-                "i686-pc-windows-gnu",
-                "i686-unknown-dragonfly",
-                "i686-unknown-linux-gnu",
-                "mips-unknown-linux-gnu",
-                "mipsel-unknown-linux-gnu",
-                "powerpc-unknown-linux-gnu",
-                "x86_64-apple-darwin",
-                "x86_64-pc-windows-gnu",
-                "x86_64-unknown-bitrig",
-                "x86_64-unknown-dragonfly",
-                "x86_64-unknown-freebsd",
-                "x86_64-unknown-linux-gnu",
-                "x86_64-unknown-openbsd",
-                // Using these targets produce a crash if no iphone SDK/simulator is installed
-                // "aarch64-apple-ios",
-                // "armv7-apple-ios",
-                // "armv7s-apple-ios",
-                // "i386-apple-ios",
-                // "x86_64-apple-ios",
-            ]
+            vec!["aarch64-linux-android",
+                 "aarch64-unknown-linux-gnu",
+                 "arm-linux-androideabi",
+                 "arm-unknown-linux-gnueabi",
+                 "arm-unknown-linux-gnueabihf",
+                 "i686-apple-darwin",
+                 "i686-pc-windows-gnu",
+                 "i686-unknown-dragonfly",
+                 "i686-unknown-linux-gnu",
+                 "mips-unknown-linux-gnu",
+                 "mipsel-unknown-linux-gnu",
+                 "powerpc-unknown-linux-gnu",
+                 "x86_64-apple-darwin",
+                 "x86_64-pc-windows-gnu",
+                 "x86_64-unknown-bitrig",
+                 "x86_64-unknown-dragonfly",
+                 "x86_64-unknown-freebsd",
+                 "x86_64-unknown-linux-gnu",
+                 "x86_64-unknown-openbsd"]
+            // Using these targets produce a crash if no iphone SDK/simulator is installed
+            // "aarch64-apple-ios",
+            // "armv7-apple-ios",
+            // "armv7s-apple-ios",
+            // "i386-apple-ios",
+            // "x86_64-apple-ios",
         };
 
         for target in targets {
