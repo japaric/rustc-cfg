@@ -10,8 +10,8 @@ script:
 
 branches:
   only:
-    - auto
-    - try
+    - staging
+    - trying
 
 notifications:
   email:
