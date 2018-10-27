@@ -46,7 +46,7 @@ pub struct Cfg {
     /// Equivalent to `cfg(target_env = "..")`
     pub target_env: String,
     /// Equivalent to `cfg(target_vendor = "..")`.
-    pub target_vendor: String,
+    pub target_vendor: Option<String>,
     /// Equivalent to `cfg(target_has_atomic = "..")`
     pub target_has_atomic: Vec<String>,
     /// Equivalent to `cfg(target_feature = "..")`
@@ -104,17 +104,16 @@ impl Cfg {
 
         Ok(Cfg {
             target_os: target_os.ok_or_else(|| failure::err_msg("`target_os` is missing"))?,
-            target_family: target_family,
+            target_family,
             target_arch: target_arch.ok_or_else(|| failure::err_msg("`target_arch` is missing"))?,
             target_endian: target_endian
                 .ok_or_else(|| failure::err_msg("`target_endian` is missing"))?,
             target_pointer_width: target_pointer_width
                 .ok_or_else(|| failure::err_msg("`target_pointer_width` is missing"))?,
             target_env: target_env.ok_or_else(|| failure::err_msg("`target_env` is missing"))?,
-            target_vendor: target_vendor
-                .ok_or_else(|| failure::err_msg("`target_vendor` is missing"))?,
-            target_has_atomic: target_has_atomic,
-            target_feature: target_feature,
+            target_vendor,
+            target_has_atomic,
+            target_feature,
             _extensible: (),
         })
     }

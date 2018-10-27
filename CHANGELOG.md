@@ -18,8 +18,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - [breaking-change] `rustc` version support has been increased to a recent
   release.
 
-- [breaking-change] `Cfg.target_vendor` is no longer optional.
-
 ## [v0.3.0] - 2016-12-30
 
 ### Changed
