@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.4.0] - 2018-10-27
+
+### Changed
+
+- [breaking-change] `Cfg::new` has been renamed to `Cfg::of`, the error type
+  of its return type has changed to `failure::Error` and the type of its first
+  argument is now `&str`.
+
+- [breaking-change] `rustc` version support has been increased to a recent
+  release.
+
+- [breaking-change] `Cfg.target_vendor` is no longer optional.
+
 ## [v0.3.0] - 2016-12-30
 
 ### Changed
@@ -38,7 +51,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Initial release
 
-[Unreleased]: https://github.com/japaric/rustc-cfg/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/japaric/rustc-cfg/compare/v0.4.0...HEAD
+[v0.4.0]: https://github.com/japaric/rustc-cfg/compare/v0.3.0...v0.4.0
 [v0.3.0]: https://github.com/japaric/rustc-cfg/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/japaric/rustc-cfg/compare/v0.1.2...v0.2.0
 [v0.1.2]: https://github.com/japaric/rustc-cfg/compare/v0.1.1...v0.1.2
