@@ -1,25 +1,26 @@
-//! `rustc --print cfg` parser (usable in build.rs scripts)
+//! Runs `rustc --print cfg` and parses the output
+//!
+//! *NOTE*: If you are in build script context you should prefer to use the [`CARGO_CFG_*`] env
+//! variables that Cargo sets over this crate.
+//!
+//! [`CARGO_CFG_*`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
 //!
 //! # Requirements
 //!
-//! - This crate depends on rustc >=1.8.0.
+//! - This crate requires `rustc` to be installed and available in the user's PATH.
 //!
 //! # How to use
 //!
-//! ``` no_run
-//! // build.rs
+//! ```
 //! extern crate rustc_cfg;
-//!
-//! use std::env;
 //!
 //! use rustc_cfg::Cfg;
 //!
 //! fn main() {
-//!     let cfg = Cfg::new(env::var_os("TARGET").unwrap()).unwrap();
+//!     let cfg = Cfg::of("x86_64-unknown-linux-gnu").unwrap();
 //!
-//!     if cfg.target_arch == "arm" {
-//!          // don't compile this or that C file
-//!     }
+//!     assert_eq!(cfg.target_arch, "x86_64");
+//!     assert!(cfg.target_family.as_ref().map(|f| f == "unix").unwrap_or(false));
 //! }
 //! ```
 
@@ -27,16 +28,9 @@
 #![deny(warnings)]
 
 use std::env;
-use std::ffi::OsStr;
 use std::process::Command;
 
-macro_rules! u {
-    ($e:expr) => {
-        $e.unwrap_or_else(|_| panic!(stringify!($e)))
-    }
-}
-
-/// Parsed `rustc --print cfg`
+/// The result of parsing the output of `rustc --print cfg`
 #[cfg_attr(test, derive(Debug))]
 pub struct Cfg {
     /// Equivalent to `cfg(target_os = "..")`
@@ -52,73 +46,36 @@ pub struct Cfg {
     /// Equivalent to `cfg(target_env = "..")`
     pub target_env: String,
     /// Equivalent to `cfg(target_vendor = "..")`.
-    ///
-    /// NOTE Only available on Rust >= 1.13.0
     pub target_vendor: Option<String>,
     /// Equivalent to `cfg(target_has_atomic = "..")`
     pub target_has_atomic: Vec<String>,
     /// Equivalent to `cfg(target_feature = "..")`
     pub target_feature: Vec<String>,
-    _0: (),
+    _extensible: (),
 }
 
 impl Cfg {
-    /// Returns the target specification of `target`
-    ///
-    /// # Errors
-    ///
-    /// Returns `Err` if `rustc` can't load the target specification for this target. This usually
-    /// means that:
-    ///
-    /// - The target triple is wrong
-    /// - This is not a "built-in" target and rustc can't find a target specification file (.json)
-    ///   for this "custom" target.
-    /// - `rustc` was built against an LLVM that doesn't have the backend to support this target.
-    ///   This also implies that you can't generate binaries for this target anyway.
-    pub fn new<S>(target: S) -> Result<Cfg, String>
-        where S: AsRef<OsStr>
-    {
-        Cfg::new_(target.as_ref())
-    }
-
-    fn new_(target: &OsStr) -> Result<Cfg, String> {
+    /// Runs `rustc --print cfg <target>` and returns the parsed output
+    pub fn of(target: &str) -> Result<Cfg, failure::Error> {
         // NOTE Cargo passes RUSTC to build scripts, prefer that over plain `rustc`.
-        let output = u!(Command::new(env::var("RUSTC")
-                .as_ref()
-                .map(|s| &**s)
-                .unwrap_or("rustc"))
+        let output = Command::new(env::var("RUSTC").as_ref().map(|s| &**s).unwrap_or("rustc"))
             .arg("--target")
             .arg(target)
             .args(&["--print", "cfg"])
-            .output());
+            .output()?;
 
         if !output.status.success() {
-            let stderr = u!(String::from_utf8(output.stderr));
-
-            if stderr.contains("unknown print request `cfg`") {
-                return Err(format!("{}\nhelp: Your rustc is too old; use a \
-                                    newer version",
-                                   stderr));
-            }
-
-            if stderr.contains("not find specification for target") {
-                return Err(format!("{}\nhelp: If using a custom target, set \
-                                    the RUST_TARGET_PATH env var to the \
-                                    directory where its .json file is stored.",
-                                   stderr.lines().next().unwrap()));
-            }
-
-            return Err(stderr);
+            return Err(failure::err_msg(String::from_utf8(output.stderr)?));
         }
 
-        let spec = u!(String::from_utf8(output.stdout));
-        let mut target_os = Err(());
-        let mut target_family = Err(());
-        let mut target_arch = Err(());
-        let mut target_endian = Err(());
-        let mut target_pointer_width = Err(());
-        let mut target_env = Err(());
-        let mut target_vendor = Err(());
+        let spec = String::from_utf8(output.stdout)?;
+        let mut target_os = None;
+        let mut target_family = None;
+        let mut target_arch = None;
+        let mut target_endian = None;
+        let mut target_pointer_width = None;
+        let mut target_env = None;
+        let mut target_vendor = None;
         let mut target_has_atomic = vec![];
         let mut target_feature = vec![];
 
@@ -127,50 +84,37 @@ impl Cfg {
 
             if let (Some(key), Some(value)) = (parts.next(), parts.next()) {
                 match key {
-                    "target_os" => {
-                        target_os = Ok(value.trim_matches('"').to_string())
-                    }
-                    "target_family" => {
-                        target_family = Ok(value.trim_matches('"').to_string())
-                    }
-                    "target_arch" => {
-                        target_arch = Ok(value.trim_matches('"').to_string())
-                    }
-                    "target_endian" => {
-                        target_endian = Ok(value.trim_matches('"').to_string())
-                    }
+                    "target_os" => target_os = Some(value.trim_matches('"').to_string()),
+                    "target_family" => target_family = Some(value.trim_matches('"').to_string()),
+                    "target_arch" => target_arch = Some(value.trim_matches('"').to_string()),
+                    "target_endian" => target_endian = Some(value.trim_matches('"').to_string()),
                     "target_pointer_width" => {
-                        target_pointer_width = Ok(value.trim_matches('"')
-                            .to_string())
+                        target_pointer_width = Some(value.trim_matches('"').to_string())
                     }
-                    "target_env" => {
-                        target_env = Ok(value.trim_matches('"').to_string())
-                    }
-                    "target_vendor" => {
-                        target_vendor = Ok(value.trim_matches('"').to_string())
-                    }
+                    "target_env" => target_env = Some(value.trim_matches('"').to_string()),
+                    "target_vendor" => target_vendor = Some(value.trim_matches('"').to_string()),
                     "target_has_atomic" => {
                         target_has_atomic.push(value.trim_matches('"').to_string())
                     }
-                    "target_feature" => {
-                        target_feature.push(value.trim_matches('"').to_string())
-                    }
+                    "target_feature" => target_feature.push(value.trim_matches('"').to_string()),
                     _ => {}
                 }
             }
         }
 
         Ok(Cfg {
-            target_os: u!(target_os),
-            target_family: target_family.ok(),
-            target_arch: u!(target_arch),
-            target_endian: u!(target_endian),
-            target_pointer_width: u!(target_pointer_width),
-            target_env: u!(target_env),
-            target_vendor: target_vendor.ok(),
-            target_has_atomic: target_has_atomic,
-            target_feature: target_feature,
-            _0: (),
+            target_os: target_os.ok_or_else(|| failure::err_msg("`target_os` is missing"))?,
+            target_family,
+            target_arch: target_arch.ok_or_else(|| failure::err_msg("`target_arch` is missing"))?,
+            target_endian: target_endian
+                .ok_or_else(|| failure::err_msg("`target_endian` is missing"))?,
+            target_pointer_width: target_pointer_width
+                .ok_or_else(|| failure::err_msg("`target_pointer_width` is missing"))?,
+            target_env: target_env.ok_or_else(|| failure::err_msg("`target_env` is missing"))?,
+            target_vendor,
+            target_has_atomic,
+            target_feature,
+            _extensible: (),
         })
     }
 }
@@ -179,48 +123,21 @@ impl Cfg {
 mod test {
     use std::process::Command;
 
+    use super::Cfg;
+
     #[test]
     fn all() {
-        let output = u!(Command::new("rustc")
+        let output = Command::new("rustc")
             .args(&["--print", "target-list"])
-            .output());
+            .output()
+            .unwrap();
 
-        let stdout = u!(String::from_utf8(output.stdout));
-        let targets = if output.status.success() {
-            stdout.lines().collect()
-        } else {
-            // No --print target-list available, use some targets that are known to exist since
-            // 1.0.0
+        let stdout = String::from_utf8(output.stdout).unwrap();
 
-            vec!["aarch64-linux-android",
-                 "aarch64-unknown-linux-gnu",
-                 "arm-linux-androideabi",
-                 "arm-unknown-linux-gnueabi",
-                 "arm-unknown-linux-gnueabihf",
-                 "i686-apple-darwin",
-                 "i686-pc-windows-gnu",
-                 "i686-unknown-dragonfly",
-                 "i686-unknown-linux-gnu",
-                 "mips-unknown-linux-gnu",
-                 "mipsel-unknown-linux-gnu",
-                 "powerpc-unknown-linux-gnu",
-                 "x86_64-apple-darwin",
-                 "x86_64-pc-windows-gnu",
-                 "x86_64-unknown-bitrig",
-                 "x86_64-unknown-dragonfly",
-                 "x86_64-unknown-freebsd",
-                 "x86_64-unknown-linux-gnu",
-                 "x86_64-unknown-openbsd"]
-            // Using these targets produce a crash if no iphone SDK/simulator is installed
-            // "aarch64-apple-ios",
-            // "armv7-apple-ios",
-            // "armv7s-apple-ios",
-            // "i386-apple-ios",
-            // "x86_64-apple-ios",
-        };
+        assert!(output.status.success());
 
-        for target in targets {
-            println!("{}\n\t{:?}\n", target, ::Cfg::new(target));
+        for target in stdout.lines() {
+            println!("{}\n\t{:?}\n", target, Cfg::of(target));
         }
     }
 }

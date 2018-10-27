@@ -3,11 +3,9 @@
 
 # `rustc-cfg`
 
-> `rustc --print cfg` parser (usable in build.rs scripts)
+> Runs `rustc --print cfg` and parses its output
 
-## Requirements
-
-- This crate depends on rustc >=1.8.0.
+## [Documentation](https://docs.rs/rustc-cfg)
 
 ## License
 
