@@ -30,6 +30,24 @@
 use std::env;
 use std::process::Command;
 
+/// The error result of parsing the output of `rustc --print cfg`
+#[derive(thiserror::Error, Debug)]
+pub enum CfgError {
+    /// If `rustc` exited non-successfully then the contents of stderr are returned in this error
+    #[error("error when executing rustc")]
+    RustcError(String),
+    /// If an expected field is missing from the config
+    #[error("field {0} is missing from config")]
+    MissingField(&'static str),
+
+    /// If an io related error occurred when trying to get the output of `rustc`
+    #[error("error when executing rustc")]
+    IoError(#[from] std::io::Error),
+    /// If there was a problem parsing Utf8 from `rustc`
+    #[error("error when executing rustc")]
+    Utf8Error(#[from] std::string::FromUtf8Error),
+}
+
 /// The result of parsing the output of `rustc --print cfg`
 #[cfg_attr(test, derive(Debug))]
 pub struct Cfg {
@@ -56,7 +74,7 @@ pub struct Cfg {
 
 impl Cfg {
     /// Runs `rustc --print cfg <target>` and returns the parsed output
-    pub fn of(target: &str) -> Result<Cfg, failure::Error> {
+    pub fn of(target: &str) -> Result<Cfg, CfgError> {
         // NOTE Cargo passes RUSTC to build scripts, prefer that over plain `rustc`.
         let output = Command::new(env::var("RUSTC").as_ref().map(|s| &**s).unwrap_or("rustc"))
             .arg("--target")
@@ -65,7 +83,7 @@ impl Cfg {
             .output()?;
 
         if !output.status.success() {
-            return Err(failure::err_msg(String::from_utf8(output.stderr)?));
+            return Err(CfgError::RustcError(String::from_utf8(output.stderr)?));
         }
 
         let spec = String::from_utf8(output.stdout)?;
@@ -103,14 +121,14 @@ impl Cfg {
         }
 
         Ok(Cfg {
-            target_os: target_os.ok_or_else(|| failure::err_msg("`target_os` is missing"))?,
+            target_os: target_os.ok_or_else(|| CfgError::MissingField("target_os"))?,
             target_family,
-            target_arch: target_arch.ok_or_else(|| failure::err_msg("`target_arch` is missing"))?,
+            target_arch: target_arch.ok_or_else(|| CfgError::MissingField("target_arch"))?,
             target_endian: target_endian
-                .ok_or_else(|| failure::err_msg("`target_endian` is missing"))?,
+                .ok_or_else(|| CfgError::MissingField("target_endian"))?,
             target_pointer_width: target_pointer_width
-                .ok_or_else(|| failure::err_msg("`target_pointer_width` is missing"))?,
-            target_env: target_env.ok_or_else(|| failure::err_msg("`target_env` is missing"))?,
+                .ok_or_else(|| CfgError::MissingField("target_pointer_width"))?,
+            target_env: target_env.ok_or_else(|| CfgError::MissingField("target_env"))?,
             target_vendor,
             target_has_atomic,
             target_feature,
