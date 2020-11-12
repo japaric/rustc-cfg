@@ -55,7 +55,13 @@ pub struct Cfg {
 }
 
 impl Cfg {
-    /// Runs `rustc --print cfg <target>` and returns the parsed output
+    /// Runs `rustc --target <target> --print cfg` and returns the parsed output.
+    ///
+    /// The `target` should be a "triple" from the list of supported rustc
+    /// targets. A list of supported rustc targets can be obtained using the
+    /// `rustc --print target-list` command. This should not be confused with
+    /// Cargo targets, i.e. binaries, `[[bin]]` and a library `[lib]` define in
+    /// a package's manifest (Cargo.toml).
     pub fn of(target: &str) -> Result<Cfg, failure::Error> {
         // NOTE Cargo passes RUSTC to build scripts, prefer that over plain `rustc`.
         let output = Command::new(env::var("RUSTC").as_ref().map(|s| &**s).unwrap_or("rustc"))
