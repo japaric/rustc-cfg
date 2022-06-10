@@ -27,6 +27,9 @@
 #![deny(missing_docs)]
 #![deny(warnings)]
 
+#[macro_use]
+extern crate thiserror;
+
 use std::env;
 use std::process::Command;
 
@@ -54,9 +57,35 @@ pub struct Cfg {
     _extensible: (),
 }
 
+/// Errors
+#[derive(Debug, Error)]
+pub enum Error {
+    /// Invoking rustc failed
+    #[error("rustc invocation failed: {0}")]
+    Rustc(String),
+    /// IO error
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+    /// rustc output did not have `target_os`
+    #[error("`target_os` is missing")]
+    MissingTargetOs,
+    /// rustc output did not have `target_arch`
+    #[error("`target_arch` is missing")]
+    MissingTargetArch,
+    /// rustc output did not have `target_endian`
+    #[error("`target_endian` is missing")]
+    MissingTargetEndian,
+    /// rustc output did not have `target_pointer_width`
+    #[error("`target_pointer_width` is missing")]
+    MissingTargetPointerWidth,
+    /// rustc output did not have `target_env`
+    #[error("`target_env` is missing")]
+    MissingTargetEnv,
+}
+
 impl Cfg {
     /// Runs `rustc --print cfg <target>` and returns the parsed output
-    pub fn of(target: &str) -> Result<Cfg, failure::Error> {
+    pub fn of(target: &str) -> Result<Cfg, Error> {
         // NOTE Cargo passes RUSTC to build scripts, prefer that over plain `rustc`.
         let output = Command::new(env::var("RUSTC").as_ref().map(|s| &**s).unwrap_or("rustc"))
             .arg("--target")
@@ -65,10 +94,14 @@ impl Cfg {
             .output()?;
 
         if !output.status.success() {
-            return Err(failure::err_msg(String::from_utf8(output.stderr)?));
+            return Err(Error::Rustc(
+                String::from_utf8(output.stderr)
+                    .unwrap_or_else(|_| "(output was not valid UTF-8)".to_string()),
+            ));
         }
 
-        let spec = String::from_utf8(output.stdout)?;
+        let spec = String::from_utf8(output.stdout)
+            .map_err(|_| Error::Rustc("Target spec from rustc was not valid UTF-8".to_string()))?;
         let mut target_os = None;
         let mut target_family = None;
         let mut target_arch = None;
@@ -103,14 +136,12 @@ impl Cfg {
         }
 
         Ok(Cfg {
-            target_os: target_os.ok_or_else(|| failure::err_msg("`target_os` is missing"))?,
+            target_os: target_os.ok_or(Error::MissingTargetOs)?,
             target_family,
-            target_arch: target_arch.ok_or_else(|| failure::err_msg("`target_arch` is missing"))?,
-            target_endian: target_endian
-                .ok_or_else(|| failure::err_msg("`target_endian` is missing"))?,
-            target_pointer_width: target_pointer_width
-                .ok_or_else(|| failure::err_msg("`target_pointer_width` is missing"))?,
-            target_env: target_env.ok_or_else(|| failure::err_msg("`target_env` is missing"))?,
+            target_arch: target_arch.ok_or(Error::MissingTargetArch)?,
+            target_endian: target_endian.ok_or(Error::MissingTargetEndian)?,
+            target_pointer_width: target_pointer_width.ok_or(Error::MissingTargetPointerWidth)?,
+            target_env: target_env.ok_or(Error::MissingTargetEnv)?,
             target_vendor,
             target_has_atomic,
             target_feature,
