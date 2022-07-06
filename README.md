@@ -5,6 +5,11 @@
 
 > Runs `rustc --print cfg` and parses its output
 
+*NOTE*: If you are in build script context you should prefer to use the [`CARGO_CFG_*`] env
+variables that Cargo sets over this crate.
+
+[`CARGO_CFG_*`]: https://doc.rust-lang.org/cargo/reference/environment-variables.html#environment-variables-cargo-sets-for-build-scripts
+
 ## [Documentation](https://docs.rs/rustc-cfg)
 
 ## License
