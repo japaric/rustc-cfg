@@ -8,6 +8,11 @@ on:
 
 jobs:
   ci:
+    strategy:
+      matrix:
+        rust:
+          - stable
+          - nightly
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -15,6 +20,6 @@ jobs:
         with:
           override: true
           profile: minimal
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
       - name: Run test suite
         run: cargo test
