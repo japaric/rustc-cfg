@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [v0.5.0] - 2022-07-06
+
+### Changed
+
+- [breaking-change] error handling has been changed to use `thiserror` (`std::error::Error`) instead
+  of `failure::Error`
+
 ## [v0.4.0] - 2018-10-27
 
 ### Changed
@@ -49,7 +56,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Initial release
 
-[Unreleased]: https://github.com/japaric/rustc-cfg/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/japaric/rustc-cfg/compare/v0.5.0...HEAD
+[v0.5.0]: https://github.com/japaric/rustc-cfg/compare/v0.4.0...v0.5.0
 [v0.4.0]: https://github.com/japaric/rustc-cfg/compare/v0.3.0...v0.4.0
 [v0.3.0]: https://github.com/japaric/rustc-cfg/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/japaric/rustc-cfg/compare/v0.1.2...v0.2.0
