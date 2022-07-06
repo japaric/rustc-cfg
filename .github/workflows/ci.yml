@@ -7,8 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  ci:
-    name: CI
+  test:
     strategy:
       matrix:
         rust:
@@ -24,3 +23,13 @@ jobs:
           toolchain: ${{ matrix.rust }}
       - name: Run test suite
         run: cargo test
+
+  ci-success:
+    name: CI
+    if: ${{ success() }}
+    needs:
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      - name: CI succeeded
+        run: exit 0
